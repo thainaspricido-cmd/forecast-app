@@ -970,32 +970,16 @@ function renderMarginZone(rows){
   zone.appendChild(pieCard);
 
   const gerArr = Array.from(byGer, ([name,v])=>({name, ...v})).sort((a,b)=>b.pos-a.pos);
+  // Mostrar TODOS os gerentes no gráfico (valores do pizza = margem positiva; gerentes sem margem positiva ficam com 0)
+  const pieLabels = gerArr.map(x=>x.name);
+  const pieVals = gerArr.map(x=> (x.pos>0 ? x.pos : 0));
 
-  // FIXO: antes de filtrar, mostrar apenas estes 3 gerentes (e manter os 3 também quando filtrar)
-  const WANTED_GERENTES = ['PEDRO','MAURICIO','RODRIGO'];
-  const _norm = (s)=> String(s||'').trim().toUpperCase();
-  const byGerNorm = new Map();
-  gerArr.forEach(x=> byGerNorm.set(_norm(x.name), x));
-
-  const pieLabels = WANTED_GERENTES;
-  const pieVals = WANTED_GERENTES.map(n => {
-    const g = byGerNorm.get(_norm(n));
-    const pos = g ? (g.pos||0) : 0;
-    return pos > 0 ? pos : 0;
-  });
-
-  const netMap = new Map(WANTED_GERENTES.map(n => {
-    const g = byGerNorm.get(_norm(n));
-    return [n, g ? (g.net||0) : 0];
-  }));
-  const negMap = new Map(WANTED_GERENTES.map(n => {
-    const g = byGerNorm.get(_norm(n));
-    return [n, g ? (g.neg||0) : 0];
-  }));
+  const netMap = new Map(gerArr.map(x=>[x.name, x.net]));
+  const negMap = new Map(gerArr.map(x=>[x.name, x.neg]));
 
   const pieCanvas = document.getElementById('chartMarginGerentePie');
   const pieEmpty = document.getElementById('chartMarginGerentePieEmpty');
-  if(pieCanvas && pieVals.some(v=>v>0)) {
+  if(pieCanvas && pieVals.some(v=>v>0)){
     pieEmpty.style.display='none';
     _pieMoney(pieCanvas, pieLabels, pieVals, netMap, negMap);
   } else {
