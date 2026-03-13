@@ -505,6 +505,7 @@ async function loadBaseFromServer(options={silent:false}){
   });
 
   state.rows = rows; state.headers = headers; ensureSearchIndex();
+  ensureSearchIndex();
 
   hydrateFromWorkbookRows();
   applyOverridesToState();
@@ -679,10 +680,7 @@ function hydrateFromWorkbookRows(){
   }catch(e){ console.error(e); }
 }
 
-function applyFilters(){
-  // garante índice para busca por CLIFOR/Cliente
-  if(state.rows && state.rows.length && state.rows[0].__search===undefined){ try{ ensureSearchIndex(); }catch(e){} }
-  let arr=state.rows.slice(); const s=(id)=> ($(id)?.value||'').trim(); const empresa=s('#flt_empresa'); const gerente=s('#flt_gerente'); const coord=s('#flt_coordenador'); const vend=s('#flt_vendedor'); const uf=s('#flt_uf'); const cat=s('#flt_categoria'); const clifor=s('#flt_clifor'); const cliente=s('#flt_cliente').toLowerCase(); if(empresa) arr=arr.filter(r=> String(r[MAP.empresa]??'')===empresa); if(gerente) arr=arr.filter(r=> String(r[MAP.gerente]??'')===gerente); if(coord) arr=arr.filter(r=> String(r[MAP.coordenador]??'')===coord); if(vend) arr=arr.filter(r=> String(r[MAP.vendedor]??'')===vend); if(uf) arr=arr.filter(r=> String(r[MAP.uf]??'')===uf); if(cat) arr=arr.filter(r=> String(r[MAP.categoria]??'')===cat); if(clifor){ const q=clifor.toLowerCase(); arr=arr.filter(r=> (r.__search||'').includes(q)); } if(cliente){ const q2=cliente; arr=arr.filter(r=> (r.__search||'').includes(q2)); } state.filtered=arr; $('#countBadge').textContent=`${arr.length} registros`; }
+function applyFilters(){ let arr=state.rows.slice(); const s=(id)=> ($(id)?.value||'').trim(); const empresa=s('#flt_empresa'); const gerente=s('#flt_gerente'); const coord=s('#flt_coordenador'); const vend=s('#flt_vendedor'); const uf=s('#flt_uf'); const cat=s('#flt_categoria'); const clifor=s('#flt_clifor'); const cliente=s('#flt_cliente').toLowerCase(); if(empresa) arr=arr.filter(r=> String(r[MAP.empresa]??'')===empresa); if(gerente) arr=arr.filter(r=> String(r[MAP.gerente]??'')===gerente); if(coord) arr=arr.filter(r=> String(r[MAP.coordenador]??'')===coord); if(vend) arr=arr.filter(r=> String(r[MAP.vendedor]??'')===vend); if(uf) arr=arr.filter(r=> String(r[MAP.uf]??'')===uf); if(cat) arr=arr.filter(r=> String(r[MAP.categoria]??'')===cat); if(clifor){ const q=clifor.toLowerCase(); arr=arr.filter(r=> (r.__search||'').includes(q)); } if(cliente){ const q2=cliente; arr=arr.filter(r=> (r.__search||'').includes(q2)); } state.filtered=arr; $('#countBadge').textContent=`${arr.length} registros`; }
 function renderCards(){
   const cont=$('#groupsContainer');
   cont.innerHTML='';
@@ -793,7 +791,7 @@ const iconSet=[
 
     frag.appendChild(card);
   });
-
+  cont.appendChild(frag);
   if(!cont.__miniBound){
     cont.addEventListener('input', (ev)=>{
       const inp=ev.target.closest('input[data-rowkey]');
@@ -815,7 +813,7 @@ const iconSet=[
         state.filled.set(k, row);
         state.filledMeta.set(k, { updatedAt: dayjs().format('YYYY-MM-DD HH:mm:ss') });
       }
-      { const sec=document.getElementById('summarySection'); if(sec && !sec.hidden){ renderSummaryTablesOnly(); } }
+      renderSummaryTablesOnly();
       
     });
     cont.__miniBound=true;
@@ -1377,10 +1375,9 @@ function buildPivotCard(rows, rowKey, title){
 function renderSummary(){ renderSummaryTablesOnly(); }
 function renderEverything(){
 renderChips();
-const allowTextSearch = (String(document.getElementById('flt_clifor')?.value||'').trim() || String(document.getElementById('flt_cliente')?.value||'').trim());
 const hint=document.getElementById('cardsHint');
 
-if(requiredCardsFiltersSelected() || allowTextSearch){
+if(requiredCardsFiltersSelected()){
   if(hint){ hint.style.display='none'; hint.innerHTML=''; }
   const arr = state.filtered || [];
   if(arr.length){
