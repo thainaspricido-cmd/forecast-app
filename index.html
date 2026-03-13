@@ -343,36 +343,33 @@ h2.h6{font-weight:800;letter-spacing:.2px;}
 
 
 <style id="FILTER_TOGGLE">
-  /* Recolher/Expandir filtros — botão discreto ao lado direito do título, sem mexer no H2 */
-  .filters-card.collapsed .card-body{display:none !important;}
-
-  /* garante que o header não mude, só reserva espaço para o botão */
+  /* Botão discreto (canto direito) e recolher/expandir via Bootstrap Collapse */
   #filtersTop .filters-card .card-header,
   #summaryFiltersCard .card-header{position:relative; padding-right:42px;}
 
   .filters-toggle-btn{
     position:absolute;
-    right:12px;
+    right:10px;
     top:10px;
-    width:26px;
-    height:26px;
-    border:1px solid rgba(255,255,255,.25);
-    background:rgba(255,255,255,.12);
-    border-radius:999px;
+    width:22px;
+    height:22px;
+    border:0;
+    background:transparent;
     padding:0;
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    color:rgba(255,255,255,.92);
-    opacity:.75;
+    color:rgba(255,255,255,.85);
+    opacity:.55;
     z-index:5;
   }
-  .filters-toggle-btn:hover{opacity:.95; background:rgba(255,255,255,.18);}
-  .filters-toggle-btn i{font-size:.95rem; line-height:1;}
+  .filters-toggle-btn:active{transform:translateY(1px);} 
+  .filters-toggle-btn:hover{opacity:.9;}
+  .filters-toggle-btn i{font-size:1rem; line-height:1;}
 
-  /* mobile: mantém discreto */
   @media (max-width:420px){
-    .filters-toggle-btn{right:10px; top:9px; width:24px; height:24px;}
+    .filters-toggle-btn{right:8px; top:8px; width:20px; height:20px;}
+    .filters-toggle-btn i{font-size:.95rem;}
   }
 </style>
 
@@ -380,16 +377,16 @@ h2.h6{font-weight:800;letter-spacing:.2px;}
 <button class="btn btn-outline-primary active" id="btnViewCards"><i class="bi bi-layout-text-window"></i> Cartões</button><button class="btn btn-outline-primary" id="btnViewSummary"><i class="bi bi-kanban"></i> Resumo</button><label class=\"btn top-action-btn\" title=\"Carregar planilha\"><i class=\"bi bi-file-earmark-spreadsheet\"></i> <input id="fileInput" type="file" accept=".xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden /></label></div></div></div></header><main class="container my-3"></div></div><div id="loadBadge" class="alert alert-secondary shadow-xxs d-none"></div>
 <button id="btnReset" class="d-none" type="button"></button><div class="alert alert-info shadow-xxs" id="tipBox"><div class="d-flex align-items-start gap-3"><i class="bi bi-info-circle fs-4"></i><div><strong>Como usar:</strong> carregue a planilha; use os filtros. Em <em>Resumo</em>, o consolidado considera <strong>tudo que já foi preenchido</strong> (independente dos filtros). Você pode ajustar os cartões se necessário; o Resumo já considera os dados carregados da planilha. </div></div></div><div id="cardsHint" class="cards-hint" style="display:none"></div>
 <section id="filtersTop" hidden><div class="card filters-card shadow-xxs"><div class="card-header"><h2 class="h6 mb-2">O que você quer ver?</h2>
-<button class=\"filters-toggle-btn\" type=\"button\" aria-label=\"Recolher filtros\" data-toggle-filters=\"cards\"><i class=\"bi bi-chevron-up\"></i></button></div><div class="card-body"><div class="row"><div class="col-12 col-lg-6"><div class="row"><div class="col-12 col-sm-6"><label class="form-label">Empresa</label><select class="form-select form-select-sm" id="flt_empresa"></select></div><div class="col-12 col-sm-6"><label class="form-label">Gerente</label><select class="form-select form-select-sm" id="flt_gerente"></select></div><div class="col-12 col-sm-6"><label class="form-label">Coordenação</label><select class="form-select form-select-sm" id="flt_coordenador"></select></div><div class="col-12 col-sm-6"><label class="form-label">Vendedor</label><select class="form-select form-select-sm" id="flt_vendedor"></select></div></div></div><div class="col-12 col-lg-6"><div class="row"><div class="col-12 col-sm-6"><label class="form-label">Categoria</label><select class="form-select form-select-sm" id="flt_categoria"></select></div>
+<button class=\"filters-toggle-btn\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#filtersTopBody\" aria-expanded=\"true\" aria-controls=\"filtersTopBody\"><i class=\"bi bi-chevron-up\"></i></button></div><div class="card-body collapse show" id=\"filtersTopBody\"><div class="row"><div class="col-12 col-lg-6"><div class="row"><div class="col-12 col-sm-6"><label class="form-label">Empresa</label><select class="form-select form-select-sm" id="flt_empresa"></select></div><div class="col-12 col-sm-6"><label class="form-label">Gerente</label><select class="form-select form-select-sm" id="flt_gerente"></select></div><div class="col-12 col-sm-6"><label class="form-label">Coordenação</label><select class="form-select form-select-sm" id="flt_coordenador"></select></div><div class="col-12 col-sm-6"><label class="form-label">Vendedor</label><select class="form-select form-select-sm" id="flt_vendedor"></select></div></div></div><div class="col-12 col-lg-6"><div class="row"><div class="col-12 col-sm-6"><label class="form-label">Categoria</label><select class="form-select form-select-sm" id="flt_categoria"></select></div>
 <div class="col-12 col-sm-6"><label class="form-label">UF</label><select class="form-select form-select-sm" id="flt_uf"></select></div><div class="col-12 col-sm-6"><label class="form-label">CLIFOR (código)</label><input class="form-control form-control-sm" id="flt_clifor" placeholder="digite o código" /></div><div class="col-12"><label class="form-label">Nome do Cliente</label><input class="form-control form-control-sm" id="flt_cliente" placeholder="digite parte do nome" /></div></div></div></div></div></div></section><section id="activeFilters" class="my-2" hidden><div class="d-flex align-items-center flex-wrap" id="chips"></div><div class="small-muted mt-1" id="countBadge">0 registros</div></section><section id="cardsSection" hidden><div class="d-flex align-items-center mb-2"><h2 class="h6 mb-0">Cartões</h2><div class="ms-auto d-flex align-items-center gap-2"><label class="small text-secondary">Máx. cartões:</label><input type="number" id=\"maxCards\" class="form-control form-control-sm" style="width:120px" value=\"9999\" min="1" /><button class="btn btn-outline-secondary btn-sm" id="btnRefreshCards" title="Atualizar"><i class="bi bi-arrow-repeat"></i></button></div></div><div id="groupsContainer" class="vstack gap-3"></div><div class="sticky-actions mt-3 d-flex align-items-center gap-2 shadow-xxs"><button class="btn btn-brand" id="btnExport"><i class="bi bi-download"></i> Baixar Excel com Forecast</button><span class="small-muted">Inclui “Forecast (última semana)” e “Atualizado Em”.</span></div></section><section id="summarySection" hidden>
   
 
   <div class="card filters-card shadow-xxs mb-3" id="summaryFiltersCard">
     <div class="card-header">
       <h2 class="h6 mb-2">O que você quer ver?</h2>
-<button class=\"filters-toggle-btn\" type=\"button\" aria-label=\"Recolher filtros\" data-toggle-filters=\"summary\"><i class=\"bi bi-chevron-up\"></i></button>
+<button class=\"filters-toggle-btn\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#summaryFiltersBody\" aria-expanded=\"true\" aria-controls=\"summaryFiltersBody\"><i class=\"bi bi-chevron-up\"></i></button>
     </div>
-    <div class="card-body">
+    <div class="card-body collapse show" id=\"summaryFiltersBody\">
       <div class="row g-2">
         <div class="col-12 col-md-4">
           <label class="form-label">Empresa</label>
@@ -542,7 +539,6 @@ async function loadBaseFromServer(options={silent:false}){
   });
 
   state.rows = rows; state.headers = headers; ensureSearchIndex();
-  ensureSearchIndex();
 
   hydrateFromWorkbookRows();
   applyOverridesToState();
@@ -1458,63 +1454,36 @@ try{ setupAutoRefresh(); }catch(e){ console.error(e); }
 
 <script id="FILTER_TOGGLE_CONTROLLER">
 (function(){
-  const LS = { cards:'filtersCollapsed_cards_v3', summary:'filtersCollapsed_summary_v3' };
+  function bindCollapse(bodyId){
+    var body = document.getElementById(bodyId);
+    if(!body) return;
+    // button can be found by aria-controls
+    var btn = document.querySelector('.filters-toggle-btn[aria-controls="'+bodyId+'"]');
+    if(!btn) return;
+    var ico = btn.querySelector('i');
 
-  function cardEl(kind){
-    return kind==='cards'
-      ? document.querySelector('#filtersTop .filters-card')
-      : document.getElementById('summaryFiltersCard');
-  }
-
-  function btnEl(kind){
-    return document.querySelector('.filters-toggle-btn[data-toggle-filters="'+kind+'"]');
-  }
-
-  function set(kind, collapsed){
-    const card = cardEl(kind);
-    const btn  = btnEl(kind);
-    if(!card || !btn) return;
-    card.classList.toggle('collapsed', !!collapsed);
-    const ico = btn.querySelector('i');
-    if(ico){ ico.className = collapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'; }
-    btn.setAttribute('aria-label', collapsed ? 'Expandir filtros' : 'Recolher filtros');
-    try{ localStorage.setItem(LS[kind], collapsed ? '1' : '0'); }catch(e){}
-  }
-
-  function get(kind){
-    try{ return localStorage.getItem(LS[kind]) === '1'; }catch(e){ return false; }
-  }
-
-  function init(){
-    // aplica estado salvo
-    set('cards', get('cards'));
-    set('summary', get('summary'));
-
-    // bind direto (mais confiável que delegação em alguns browsers)
-    const bc = btnEl('cards');
-    const bs = btnEl('summary');
-
-    if(bc){
-      bc.addEventListener('click', function(ev){
-        ev.preventDefault();
-        const card = cardEl('cards');
-        if(!card) return;
-        set('cards', !card.classList.contains('collapsed'));
-      }, {passive:false});
+    function setIcon(expanded){
+      if(!ico) return;
+      ico.className = expanded ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
+      btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     }
 
-    if(bs){
-      bs.addEventListener('click', function(ev){
-        ev.preventDefault();
-        const card = cardEl('summary');
-        if(!card) return;
-        set('summary', !card.classList.contains('collapsed'));
-      }, {passive:false});
-    }
+    // initial
+    setIcon(body.classList.contains('show'));
+
+    body.addEventListener('shown.bs.collapse', function(){ setIcon(true); });
+    body.addEventListener('hidden.bs.collapse', function(){ setIcon(false); });
   }
 
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      bindCollapse('filtersTopBody');
+      bindCollapse('summaryFiltersBody');
+    });
+  } else {
+    bindCollapse('filtersTopBody');
+    bindCollapse('summaryFiltersBody');
+  }
 })();
 </script>
 
