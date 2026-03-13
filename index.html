@@ -284,9 +284,8 @@ async function fetchBaseXlsx(){
 
 async function loadBaseFromServer(options={silent:false}){
   const silent = !!options.silent;
-  const badge=document.getElementById('loadBadge');
-  if(!silent && badge){ badge.classList.remove('d-none'); badge.textContent='Atualizando base (GitHub)...'; }
-  setSyncStatus('Atualizando base...', false);
+  const badge = null; // loadBadge desativado
+setSyncStatus('Atualizando base...', false);
 
   if(typeof XLSX==='undefined'){ throw new Error('Biblioteca XLSX não carregou.'); }
   const buf = await fetchBaseXlsx();
@@ -324,10 +323,7 @@ async function loadBaseFromServer(options={silent:false}){
   document.getElementById('activeFilters').hidden=false;
   document.getElementById('cardsSection').hidden=true;
   document.getElementById('tipBox')?.classList.add('d-none');
-
-  if(badge && !silent){
-    badge.classList.remove('d-none');
-    badge.textContent = `Base carregada: ${rows.length} linhas — última atualização ${nowBR()}`;
+linhas — última atualização ${nowBR()}`;
   }
 
   setSyncStatus('Base atualizada ' + nowBR(), false);
@@ -804,7 +800,7 @@ const fileInput=$('#fileInput'); const btnReset=$('#btnReset'); const btnRefresh
 document.getElementById('fileInput').addEventListener('click', ()=>{ try{ (document.getElementById('fileInput')||{}).value = ''; }catch(e){} });
 document.getElementById('fileInput').addEventListener('change', async (ev)=>{
 const file = ev.target.files && ev.target.files[0]; if(!file){ return; }
-const badge=document.getElementById('loadBadge'); if(badge){badge.classList.remove('d-none'); badge.textContent='Lendo arquivo: '+file.name+' ...';}
+const badge = null; // loadBadge desativado if(badge){badge.classList.remove('d-none'); badge.textContent='Lendo arquivo: '+file.name+' ...';}
 try{
 if(typeof XLSX==='undefined'){ throw new Error('Biblioteca XLSX não carregou (rede bloqueada/sem internet).'); } const buf = await file.arrayBuffer(); const wb = XLSX.read(buf, {type:'array'}); if(!wb.SheetNames || !wb.SheetNames.length){ throw new Error('Planilha sem abas.'); }
 const ws = wb.Sheets[wb.SheetNames[0]]; const headerRows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''}); const hdrIdx = detectHeaderRow(headerRows);
@@ -815,13 +811,13 @@ const rowsRaw = XLSX.utils.sheet_to_json(wsCloned, {defval:'', raw:true});
 const rows = rowsRaw.map((r,i)=>{ const o={}; for(const k in r){ o[String(k||'').trim().toUpperCase()] = r[k]; } o.__rowIndex__=i; return o; });
 state.rows = rows; state.headers = headers; hydrateFromWorkbookRows(); applyFilters();
 $('#filtersTop').hidden=false; buildTopFilters(); $('#activeFilters').hidden=false; $('#cardsSection').hidden=true; $('#tipBox').classList.add('d-none'); btnReset.disabled=false;
-const badge = document.getElementById('loadBadge'); badge.classList.remove('d-none'); badge.textContent = `Base carregada: ${rows.length} linhas — selecione os 5 filtros principais (Empresa, Gerente, Coordenação, Vendedor e Categoria) para ver os cartões`;
+const badge = null; // loadBadge desativado badge.classList.remove('d-none'); badge.textContent = `Base carregada: ${rows.length} linhas — selecione os 5 filtros principais (Empresa, Gerente, Coordenação, Vendedor e Categoria) para ver os cartões`;
 renderEverything(); showSection('summary');
 }catch(err){ console.error(err); alert('Não foi possível ler a planilha: '+(err?.message||err)+"\n\nSe estiver abrindo via file:/// e nada acontecer, abra o HTML com Ctrl+O no Edge ou hospede em HTTPS."); }
 });
 btnRefreshCards?.addEventListener('click', ()=>{ applyFilters(); renderEverything(); });
 btnExport?.addEventListener('click', ()=> exportExcel());
-btnReset.addEventListener('click', ()=>{ state.rows=[]; state.headers=[]; state.filtered=[]; state.forecastInputs.clear(); state.stockInputs.clear(); state.filled.clear(); state.filledMeta.clear(); $('#filtersTop').hidden=true; $('#activeFilters').hidden=true; $('#cardsSection').hidden=true; $('#summarySection').hidden=true; $('#kpiSection') && ($('#kpiSection').hidden=true); $('#tipBox').classList.remove('d-none'); document.getElementById('loadBadge').classList.add('d-none'); (document.getElementById('fileInput')||{}).value=''; btnReset.disabled=true; $('#btnViewCards').classList.add('active'); $('#btnViewSummary').classList.remove('active'); $('#btnViewKPIs')?.classList.remove('active'); });
+btnReset.addEventListener('click', ()=>{ state.rows=[]; state.headers=[]; state.filtered=[]; state.forecastInputs.clear(); state.stockInputs.clear(); state.filled.clear(); state.filledMeta.clear(); $('#filtersTop').hidden=true; $('#activeFilters').hidden=true; $('#cardsSection').hidden=true; $('#summarySection').hidden=true; $('#kpiSection') && ($('#kpiSection').hidden=true); $('#tipBox').classList.remove('d-none');  (document.getElementById('fileInput')||{}).value=''; btnReset.disabled=true; $('#btnViewCards').classList.add('active'); $('#btnViewSummary').classList.remove('active'); $('#btnViewKPIs')?.classList.remove('active'); });
 function exportExcel(){ const rows = state.rows.map((r,i)=> ({...r, 'Forecast (última semana)': state.forecastInputs.get(String(r.__rowIndex__ ?? i)) ?? '', 'Estoque Atual': state.stockInputs.get(String(r.__rowIndex__ ?? i)) ?? '', 'Atualizado Em': state.filledMeta.get(String(r.__rowIndex__ ?? i))?.updatedAt || '' })); const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Forecast'); const out = XLSX.write(wb, {bookType:'xlsx', type:'array'}); const blob = new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='FORECAST_ATUALIZADO.xlsx'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1500); }
 
 // ===== Resumo (Pivot) — somente preenchidos =====
