@@ -505,7 +505,6 @@ async function loadBaseFromServer(options={silent:false}){
   });
 
   state.rows = rows; state.headers = headers; ensureSearchIndex();
-  ensureSearchIndex();
 
   hydrateFromWorkbookRows();
   applyOverridesToState();
@@ -662,7 +661,7 @@ function requiredCardsFiltersSelected(){
 }
 function detectHeaderRow(headerRows){ const required=['GERENTE','COORDENAÇÃO','VENDEDOR','CLIFOR','CLIENTE']; for(let i=0;i<headerRows.length;i++){ const row=(headerRows[i]||[]).map(v=> String(v||'').trim().toUpperCase()); const set=new Set(row); if(required.every(h=> set.has(h))) return i; } return 0; }
 function fillSelect(id, values){ const sel=$(id); sel.innerHTML=''; const opt=document.createElement('option'); opt.value=''; opt.textContent='Todos'; sel.appendChild(opt); values.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.textContent=String(v); sel.appendChild(o); }); }
-function buildTopFilters(){ fillSelect('#flt_empresa', uniqueValues(state.rows, MAP.empresa)); fillSelect('#flt_gerente', uniqueValues(state.rows, MAP.gerente)); fillSelect('#flt_coordenador', uniqueValues(state.rows, MAP.coordenador)); fillSelect('#flt_vendedor', uniqueValues(state.rows, MAP.vendedor)); fillSelect('#flt_uf', uniqueValues(state.rows, MAP.uf)); fillSelect('#flt_categoria', uniqueValues(state.rows, MAP.categoria)); ['empresa','gerente','coordenador','vendedor','uf','categoria'].forEach(k=>{ $('#flt_'+k).addEventListener('change', ()=>{ applyFilters(); renderEverything(); }); }); $('#flt_clifor').addEventListener('input', debounce(() => { applyFilters(); renderEverything(); }, 140)); $('#flt_cliente').addEventListener('input', debounce(() => { applyFilters(); renderEverything(); }, 140)); }
+function buildTopFilters(){ fillSelect('#flt_empresa', uniqueValues(state.rows, MAP.empresa)); fillSelect('#flt_gerente', uniqueValues(state.rows, MAP.gerente)); fillSelect('#flt_coordenador', uniqueValues(state.rows, MAP.coordenador)); fillSelect('#flt_vendedor', uniqueValues(state.rows, MAP.vendedor)); fillSelect('#flt_uf', uniqueValues(state.rows, MAP.uf)); fillSelect('#flt_categoria', uniqueValues(state.rows, MAP.categoria)); ['empresa','gerente','coordenador','vendedor','uf','categoria'].forEach(k=>{ $('#flt_'+k).addEventListener('change', ()=>{ applyFilters(); renderEverything(); }); }); $('#flt_clifor').addEventListener('input', debounce(() => { applyFilters(); renderEverything(); }, 120)); $('#flt_cliente').addEventListener('input', debounce(() => { applyFilters(); renderEverything(); }, 120)); }
 function renderChips(){ const zone=$('#chips'); if(!zone) return; zone.innerHTML=''; const map={ empresa:'EMPRESA', gerente:'GERENTE', coordenador:'COORDENAÇÃO', vendedor:'VENDEDOR', uf:'UF', categoria:'CATEGORIA', clifor:'CLIFOR', cliente:'CLIENTE' }; ['empresa','gerente','coordenador','vendedor','uf','categoria'].forEach(k=>{ const v=$('#flt_'+k)?.value; if(v){ const b=document.createElement('span'); b.className='badge text-bg-light filter-chip'; b.textContent=map[k]+': '+v; zone.appendChild(b);} }); const code=$('#flt_clifor')?.value?.trim(); if(code){ const b=document.createElement('span'); b.className='badge text-bg-light filter-chip'; b.textContent='CLIFOR: '+code; zone.appendChild(b);} const name=$('#flt_cliente')?.value?.trim(); if(name){ const b=document.createElement('span'); b.className='badge text-bg-light filter-chip'; b.textContent='CLIENTE: '+name; zone.appendChild(b);} }
 
 function hydrateFromWorkbookRows(){
@@ -813,7 +812,7 @@ const iconSet=[
         state.filled.set(k, row);
         state.filledMeta.set(k, { updatedAt: dayjs().format('YYYY-MM-DD HH:mm:ss') });
       }
-      renderSummaryTablesOnly();
+      { const sec=document.getElementById('summarySection'); if(sec && !sec.hidden){ renderSummaryTablesOnly(); } }
       
     });
     cont.__miniBound=true;
@@ -1032,7 +1031,7 @@ const ref = ws['!ref'] || 'A1:Z9999'; const range = XLSX.utils.decode_range(ref)
 const wsCloned = Object.assign({}, ws, {'!ref': newRef});
 const rowsRaw = XLSX.utils.sheet_to_json(wsCloned, {defval:'', raw:true});
 const rows = rowsRaw.map((r,i)=>{ const o={}; for(const k in r){ o[String(k||'').trim().toUpperCase()] = r[k]; } o.__rowIndex__=i; return o; });
-state.rows = rows; state.headers = headers; hydrateFromWorkbookRows(); applyFilters();
+state.rows = rows; state.headers = headers; ensureSearchIndex(); hydrateFromWorkbookRows(); applyFilters();
 $('#filtersTop').hidden=false; buildTopFilters(); $('#activeFilters').hidden=false; $('#cardsSection').hidden=true; $('#tipBox').classList.add('d-none'); btnReset.disabled=false;
 const badge = document.getElementById('loadBadge'); badge.classList.remove('d-none'); badge.textContent = `Base carregada: ${rows.length} linhas — selecione os 5 filtros principais (Empresa, Gerente, Coordenação, Vendedor e Categoria) para ver os cartões`;
 renderEverything(); showSection('summary');
@@ -1397,7 +1396,7 @@ if(requiredCardsFiltersSelected()){
   const g=document.getElementById('groupsContainer');
   if(g){ g.innerHTML=''; }
 }
-renderSummaryTablesOnly();
+const sec=document.getElementById('summarySection'); if(sec && !sec.hidden){ renderSummaryTablesOnly(); }
 }
 // Inicia sincronização automática ao abrir
 try{ setupAutoRefresh(); }catch(e){ console.error(e); }
