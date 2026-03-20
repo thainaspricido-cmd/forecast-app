@@ -677,6 +677,7 @@ nav.bottom-nav, .bottom-nav{
 
   <div id="pivotZone" class="vstack gap-3"></div>
   <div id="marginZone" class="vstack gap-3 mt-3"></div>
+  <div id="gapZone" class="vstack gap-3 mt-3"></div>
 </section></main><script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script><script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/locale/pt-br.js"></script>
 <script>dayjs.locale('pt-br');</script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -1160,6 +1161,87 @@ function buildBarH(canvas, labels, values, colorsFill, colorsBorder){
  }
  });
 }
+
+
+// ===== Gaps % (Forecast vs Meta) por Gerente — Resumo =====
+// A coluna "FCST vs META" do seu resumo é o atingimento: ForecastAtual / Meta.
+// Gap% = (1 - ForecastAtual/Meta) * 100  -> quanto falta para atingir a meta (em %).
+function buildBarHGapPct(canvas, labels, values, colorsFill, colorsBorder){
+  if(!canvas) return;
+  if(canvas.__chart){ try{ canvas.__chart.destroy(); }catch(e){} canvas.__chart=null; }
+  const rowH=24; const base=220; const h=Math.max(base, (labels||[]).length*rowH);
+  canvas.height=h;
+  canvas.__chart = new Chart(canvas.getContext('2d'),{
+    type:'bar',
+    data:{labels:labels,datasets:[{label:'Gap % (Meta - Forecast)',data:values,backgroundColor:colorsFill,borderColor:colorsBorder,borderWidth:1.4,borderRadius:6,barThickness:18}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,responsive:true,
+      scales:{
+        x:{
+          ticks:{callback:(v)=> `${Number(v).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`},
+          grid:{color:getThemeVar('--stroke','#E6E8F5')}
+        },
+        y:{ticks:{color:getThemeVar('--text-700','#6B7094')},grid:{display:false}}
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:(ctx)=> `${ctx.label}: ${Number(ctx.parsed.x).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`}},
+        datalabels:{display:false}
+      }
+    }
+  });
+}
+
+function renderGerenteGapChart(rows){
+  const zone=document.getElementById('gapZone');
+  if(!zone) return;
+  zone.innerHTML='';
+  const src = Array.isArray(rows) ? rows : [];
+  if(!src.length) return;
+
+  // Agrega por gerente. aggregateBy já devolve: atual, meta e ating (= atual/meta)
+  const agg = aggregateBy(MAP.gerente, src);
+
+  // transforma "FCST vs META" em gap% (quanto falta)
+  let data = agg.map(d => {
+    const ating = Number.isFinite(d.ating) ? d.ating : NaN;
+    const gapPct = (Number.isFinite(ating) ? (1 - ating) * 100 : NaN);
+    return { name: d.name, gapPct, ating };
+  });
+
+  // só gaps positivos (abaixo da meta) e ordena MAIOR -> MENOR (maior gap no topo)
+  data = data.filter(d => Number.isFinite(d.gapPct) && d.gapPct > 0);
+  data.sort((a,b) => b.gapPct - a.gapPct);
+
+  const card=document.createElement('div');
+  card.className='pivot-card';
+  card.innerHTML = `
+    <div class="pivot-head"><div>
+      <p class="pivot-title">Gaps % por Gerente (Forecast vs Meta)</p>
+      <p class="pivot-sub">Baseado em FCST vs META (Forecast/Meta). Gap% = (1 - FCST/META)</p>
+    </div></div>
+    <div class="pivot-body">
+      <div class="pivot-scroll" style="max-height:420px;">
+        <canvas id="chartGerenteGap"></canvas>
+      </div>
+      <div id="chartGerenteGapEmpty" class="small text-muted mt-2" style="display:none;">Sem gaps positivos para exibir (Forecast ≥ Meta).</div>
+    </div>`;
+  zone.appendChild(card);
+
+  const canvas=document.getElementById('chartGerenteGap');
+  const empty=document.getElementById('chartGerenteGapEmpty');
+  if(!data.length){ if(empty) empty.style.display='block'; return; }
+
+  const TOP_N = 15;
+  const top = data.slice(0, TOP_N);
+  const labels = top.map(d => d.name);
+  const values = top.map(d => Math.round(d.gapPct * 10)/10); // 1 casa decimal
+
+  const bad = getThemeVar('--bad', '#E2556B');
+  const fills = values.map(()=> _hexToRgba(bad, 0.35));
+  const borders = values.map(()=> _hexToRgba(bad, 0.9));
+  if(empty) empty.style.display='none';
+  buildBarHGapPct(canvas, labels, values, fills, borders);
+}
 function _hexToRgba(hex, a){
  const h=(hex||'').trim();
  if(h.startsWith('rgba(')) return h; if(h.startsWith('rgb(')) return h.replace('rgb(','rgba(').replace(')',`,${a})`);
@@ -1599,7 +1681,7 @@ function renderPivotTables(rows){
   const zone=document.getElementById('pivotZone');
   if(!zone) return;
   zone.innerHTML='';
-  if(!(rows||[]).length){ zone.innerHTML='<div class="alert alert-secondary">Nenhum cartão preenchido para esses filtros.</div>'; return; }
+  if(!(rows||[]).length){ zone.innerHTML='<div class="alert alert-secondary">Nenhum cartão preenchido para esses filtros.</div>'; try{ const gz=document.getElementById('gapZone'); if(gz) gz.innerHTML=''; }catch(e){} return; }
   zone.appendChild(buildPivotCard(rows, MAP.categoria, 'Resumo por Categoria'));
   zone.appendChild(buildPivotCard(rows, MAP.coordenador, 'Resumo por Coordenação'));
   try{ renderMarginZone(rows); }catch(e){ console.error(e); }
