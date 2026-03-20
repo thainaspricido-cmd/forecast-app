@@ -1191,14 +1191,14 @@ function buildBarHPct(canvas, labels, values, colorsFill, colorsBorder){
         x:{
           beginAtZero:true,
           suggestedMax: 120,
-          ticks:{ callback:(v)=> `${Number(v).toLocaleString('pt-BR',{maximumFractionDigits:1})}%` },
+          ticks:{ callback:(v)=> `${Number(v).toLocaleString('pt-BR',{maximumFractionDigits:0})}%` },
           grid:{ color:getThemeVar('--stroke','#E6E8F5') }
         },
         y:{ ticks:{ color:getThemeVar('--text-700','#6B7094') }, grid:{ display:false } }
       },
       plugins:{
         legend:{ display:false },
-        tooltip:{ callbacks:{ label:(ctx)=> `${ctx.label}: ${Number(ctx.parsed.x).toLocaleString('pt-BR',{maximumFractionDigits:1})}%` } },
+        tooltip:{ callbacks:{ label:(ctx)=> `${ctx.label}: ${Number(ctx.parsed.x).toLocaleString('pt-BR',{maximumFractionDigits:0})}%` } },
         datalabels:{ display:false }
       }
     }
@@ -1250,7 +1250,7 @@ function renderGerenteFcstVsMetaRank(rows){
   const TOP_N = 15;
   const top = agg.slice(0, TOP_N);
   const labels = top.map(d => d.name);
-  const values = top.map(d => Math.round(d.pct * 10)/10);
+  const values = top.map(d => Math.round(d.pct));
 
   // cor única (vermelho) para ranking pior
   const bad = getThemeVar('--bad', '#E2556B');
@@ -1756,7 +1756,12 @@ function buildPivotCard(rows, rowKey, title){
       td.className=(col.k==='fcstVsMeta'||col.k==='rcVsFcst')?'pv-pct':'pv-num';
       if(col.k==='fcstVsMeta'||col.k==='rcVsFcst'){
         td.textContent=fmtPct(vals[col.k]);
-        if(Number.isFinite(vals[col.k])){ if(vals[col.k]>=1) td.classList.add('pv-pos'); else if(vals[col.k]>=0.8) td.classList.add('pv-warn'); else td.classList.add('pv-neg'); }
+        if(Number.isFinite(vals[col.k])){
+          const v = vals[col.k];
+          if(v < 0) td.classList.add('pv-neg');
+          else if(v >= 1) td.classList.add('pv-pos');
+          else if(v >= 0.8) td.classList.add('pv-warn');
+        }
       } else if(col.k==='fcstMinusMeta'||col.k==='rcMinusMeta'){
         const v=Number(vals[col.k])||0; td.textContent=fmt0(v); if(v<0) td.classList.add('pv-neg'); else if(v>0) td.classList.add('pv-pos');
       } else {
@@ -1770,7 +1775,22 @@ function buildPivotCard(rows, rowKey, title){
   const trt=document.createElement('tr');
   const tht=document.createElement('th'); tht.textContent='Total Geral'; trt.appendChild(tht);
   const ct=calc(tot); const valsT={...tot,...ct};
-  headCols.forEach(col=>{ const td=document.createElement('td'); td.className=(col.k==='fcstVsMeta'||col.k==='rcVsFcst')?'pv-pct':'pv-num'; if(col.k==='fcstVsMeta'||col.k==='rcVsFcst') td.textContent=fmtPct(valsT[col.k]); else td.textContent=fmt0(valsT[col.k]); trt.appendChild(td); });
+  headCols.forEach(col=>{
+    const td=document.createElement('td');
+    td.className=(col.k==='fcstVsMeta'||col.k==='rcVsFcst')?'pv-pct':'pv-num';
+    if(col.k==='fcstVsMeta'||col.k==='rcVsFcst'){
+      td.textContent=fmtPct(valsT[col.k]);
+      if(Number.isFinite(valsT[col.k]) && valsT[col.k] < 0) td.classList.add('pv-neg');
+    } else if(col.k==='fcstMinusMeta'||col.k==='rcMinusMeta'){
+      const v=Number(valsT[col.k])||0;
+      td.textContent=fmt0(v);
+      if(v<0) td.classList.add('pv-neg');
+      else if(v>0) td.classList.add('pv-pos');
+    } else {
+      td.textContent=fmt0(valsT[col.k]);
+    }
+    trt.appendChild(td);
+  });
   tfoot.appendChild(trt);
   return card;
 }
