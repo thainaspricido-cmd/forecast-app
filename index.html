@@ -1702,6 +1702,7 @@ function renderPivotTables(rows){
   if(!(rows||[]).length){ zone.innerHTML='<div class="alert alert-secondary">Nenhum cartão preenchido para esses filtros.</div>'; return; }
   zone.appendChild(buildPivotCard(rows, MAP.categoria, 'Resumo por Categoria'));
   zone.appendChild(buildPivotCard(rows, MAP.coordenador, 'Resumo por Coordenação'));
+  try{ renderGerenteFcstVsMetaRank(rows); }catch(e){ console.error(e); }
   try{ renderMarginZone(rows); }catch(e){ console.error(e); }
 }
 function buildPivotCard(rows, rowKey, title){
