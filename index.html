@@ -1163,9 +1163,9 @@ function buildBarH(canvas, labels, values, colorsFill, colorsBorder){
 }
 
 
-// ===== Gaps % (Forecast vs Meta) por Gerente — Resumo =====
-// A coluna "FCST vs META" do seu resumo é o atingimento: ForecastAtual / Meta.
-// Gap% = (1 - ForecastAtual/Meta) * 100  -> quanto falta para atingir a meta (em %).
+// ===== Gap% por Gerente (usando FCST vs META) — Resumo =====
+// No seu resumo, "FCST vs META" = ForecastAtual / Meta (atingimento).
+// Gap% (quanto falta) = (1 - ForecastAtual/Meta) * 100.
 function buildBarHGapPct(canvas, labels, values, colorsFill, colorsBorder){
   if(!canvas) return;
   if(canvas.__chart){ try{ canvas.__chart.destroy(); }catch(e){} canvas.__chart=null; }
@@ -1176,10 +1176,7 @@ function buildBarHGapPct(canvas, labels, values, colorsFill, colorsBorder){
     data:{labels:labels,datasets:[{label:'Gap % (Meta - Forecast)',data:values,backgroundColor:colorsFill,borderColor:colorsBorder,borderWidth:1.4,borderRadius:6,barThickness:18}]},
     options:{indexAxis:'y',maintainAspectRatio:false,responsive:true,
       scales:{
-        x:{
-          ticks:{callback:(v)=> `${Number(v).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`},
-          grid:{color:getThemeVar('--stroke','#E6E8F5')}
-        },
+        x:{ticks:{callback:(v)=> `${Number(v).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`},grid:{color:getThemeVar('--stroke','#E6E8F5')}},
         y:{ticks:{color:getThemeVar('--text-700','#6B7094')},grid:{display:false}}
       },
       plugins:{
@@ -1196,22 +1193,8 @@ function renderGerenteGapChart(rows){
   if(!zone) return;
   zone.innerHTML='';
   const src = Array.isArray(rows) ? rows : [];
-  if(!src.length) return;
 
-  // Agrega por gerente. aggregateBy já devolve: atual, meta e ating (= atual/meta)
-  const agg = aggregateBy(MAP.gerente, src);
-
-  // transforma "FCST vs META" em gap% (quanto falta)
-  let data = agg.map(d => {
-    const ating = Number.isFinite(d.ating) ? d.ating : NaN;
-    const gapPct = (Number.isFinite(ating) ? (1 - ating) * 100 : NaN);
-    return { name: d.name, gapPct, ating };
-  });
-
-  // só gaps positivos (abaixo da meta) e ordena MAIOR -> MENOR (maior gap no topo)
-  data = data.filter(d => Number.isFinite(d.gapPct) && d.gapPct > 0);
-  data.sort((a,b) => b.gapPct - a.gapPct);
-
+  // Card sempre aparece (mesmo sem dados) pra você enxergar que entrou.
   const card=document.createElement('div');
   card.className='pivot-card';
   card.innerHTML = `
@@ -1223,22 +1206,44 @@ function renderGerenteGapChart(rows){
       <div class="pivot-scroll" style="max-height:420px;">
         <canvas id="chartGerenteGap"></canvas>
       </div>
-      <div id="chartGerenteGapEmpty" class="small text-muted mt-2" style="display:none;">Sem gaps positivos para exibir (Forecast ≥ Meta).</div>
+      <div id="chartGerenteGapEmpty" class="small text-muted mt-2" style="display:none;">Sem dados para exibir.</div>
     </div>`;
   zone.appendChild(card);
 
   const canvas=document.getElementById('chartGerenteGap');
   const empty=document.getElementById('chartGerenteGapEmpty');
-  if(!data.length){ if(empty) empty.style.display='block'; return; }
+
+  if(!src.length){
+    if(empty) empty.style.display='block';
+    return;
+  }
+
+  // Agrega por gerente: aggregateBy já devolve 'ating' (= atual/meta)
+  const agg = aggregateBy(MAP.gerente, src);
+  let data = agg.map(d => {
+    const ating = Number.isFinite(d.ating) ? d.ating : NaN;
+    const gapPct = (Number.isFinite(ating) ? (1 - ating) * 100 : NaN);
+    return { name: d.name, gapPct };
+  });
+
+  // gaps positivos e ordena MAIOR -> MENOR (maior gap no topo)
+  data = data.filter(d => Number.isFinite(d.gapPct) && d.gapPct > 0);
+  data.sort((a,b) => b.gapPct - a.gapPct);
+
+  if(!data.length){
+    if(empty){ empty.textContent='Sem gaps positivos para exibir (Forecast ≥ Meta).'; empty.style.display='block'; }
+    return;
+  }
 
   const TOP_N = 15;
   const top = data.slice(0, TOP_N);
   const labels = top.map(d => d.name);
-  const values = top.map(d => Math.round(d.gapPct * 10)/10); // 1 casa decimal
+  const values = top.map(d => Math.round(d.gapPct * 10)/10);
 
   const bad = getThemeVar('--bad', '#E2556B');
   const fills = values.map(()=> _hexToRgba(bad, 0.35));
   const borders = values.map(()=> _hexToRgba(bad, 0.9));
+
   if(empty) empty.style.display='none';
   buildBarHGapPct(canvas, labels, values, fills, borders);
 }
@@ -1681,7 +1686,7 @@ function renderPivotTables(rows){
   const zone=document.getElementById('pivotZone');
   if(!zone) return;
   zone.innerHTML='';
-  if(!(rows||[]).length){ zone.innerHTML='<div class="alert alert-secondary">Nenhum cartão preenchido para esses filtros.</div>'; try{ const gz=document.getElementById('gapZone'); if(gz) gz.innerHTML=''; }catch(e){} return; }
+  if(!(rows||[]).length){ zone.innerHTML='<div class="alert alert-secondary">Nenhum cartão preenchido para esses filtros.</div>'; try{ renderGerenteGapChart([]); }catch(e){}  return; }
   zone.appendChild(buildPivotCard(rows, MAP.categoria, 'Resumo por Categoria'));
   zone.appendChild(buildPivotCard(rows, MAP.coordenador, 'Resumo por Coordenação'));
   try{ renderMarginZone(rows); }catch(e){ console.error(e); }
