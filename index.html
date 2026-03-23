@@ -1947,5 +1947,15 @@ try{ setupAutoRefresh(); }catch(e){ console.error(e); }
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
+
+// === AUTOLOAD BASE ON PAGE START ===
+document.addEventListener("DOMContentLoaded", async () => {
+  try{
+    await loadBaseFromServer();
+    await buildSummaryFilters();
+    await buildCardFilters();
+    console.log('Base carregada automaticamente.');
+  }catch(e){ console.error('Autoload fail',e); }
+});
 </script>
 </body></html>
